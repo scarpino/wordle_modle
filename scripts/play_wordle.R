@@ -14,13 +14,13 @@ library(dplyr)
 #Globals#
 #########
 run_all <- FALSE #run all words set to TRUE
-run_word <- 204 #run a specific word (need run_all == FALSE)
+run_word <- 205 #run a specific word (need run_all == FALSE)
 max_tries <- 15 #max number of tries to make sure the while loop doesn't go forever
 
 ######
 #Data#
 ######
-source("build_dict.R")
+source("../scripts/build_dict.R")
 
 get_network_file <- list.files("../network", full.names = TRUE)
 
