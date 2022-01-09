@@ -20,7 +20,7 @@ max_tries <- 15 #max number of tries to make sure the while loop doesn't go fore
 ######
 #Data#
 ######
-source("../scripts/build_dict.R")
+source("build_dict.R")
 
 get_network_file <- list.files("../network", full.names = TRUE)
 
