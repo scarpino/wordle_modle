@@ -14,13 +14,18 @@ library(dplyr)
 #Globals#
 #########
 run_all <- FALSE #run all words set to TRUE
-run_word <- 205 #run a specific word (need run_all == FALSE)
+run_word <- 206 #run a specific word (need run_all == FALSE)
 max_tries <- 15 #max number of tries to make sure the while loop doesn't go forever
 
 ######
 #Data#
 ######
-source("build_dict.R")
+#source("build_dict.R") #the website location for the JS keeps shifting.
+goal_words_df <- read.csv("../data/1641830985.33453_goal_wordles.csv")
+goal_words <- as.character(goal_words_df[,1])
+non_goal_words_df <- read.csv("../data/1641830985.33453_non_goal_wordles.csv")
+non_goal_words <- as.character(non_goal_words_df[,1])
+all_words <- c(goal_words, non_goal_words)
 
 get_network_file <- list.files("../network", full.names = TRUE)
 
