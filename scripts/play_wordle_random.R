@@ -14,7 +14,7 @@ library(dplyr)
 #Globals#
 #########
 run_all <- FALSE #run all words set to TRUE
-run_word <- 209 #run a specific word (need run_all == FALSE)
+run_word <- 210 #run a specific word (need run_all == FALSE)
 max_tries <- 15 #max number of tries to make sure the while loop doesn't go forever
 N <- 1000 #number of starts
 
