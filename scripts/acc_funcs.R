@@ -106,6 +106,33 @@ get_words <- function(graph_object, word_match, word){
   return(words.in)
 }
 
+get_words_dict <- function(dictionary, word_match, word){
+  words.in <- strsplit(x = dictionary, split = "")
+  
+  if(length(word_match$match) > 0){
+    keep_words_exact <- lapply(X = words.in, FUN = find_exact_letters, positions = word_match$match, letters = word)
+    if(sum(unlist(keep_words_exact)) == 0){
+      stop("exact match reported, but not found in remaining words")
+    }
+    words.in <- words.in[which(keep_words_exact == 1)]
+  }
+  
+  if(length(word_match$present) > 0){
+    keep_words_present <- lapply(X = words.in, FUN = find_present_letters, positions = word_match$present, letters = word)
+    words.in <- words.in[which(keep_words_present == 1)]
+  }
+  
+  if(length(word_match$present) > 0 | length(word_match$match) > 0){
+    keep_words_correct_letters <- lapply(X = words.in, FUN = find_words_with_wrong_letters, word_match = word_match, letters = word)
+  }else{
+    stop("all words removed")
+  }
+  
+  words.in <- words.in[which(keep_words_correct_letters == 1)]
+  
+  return(words.in)
+}
+
 build_net <- function(graph_object, word_match, word){
   graph.2 <- graph_object$network
   vertex.names <- get.vertex.attribute(graph_object$network, "name")
@@ -122,6 +149,19 @@ build_net <- function(graph_object, word_match, word){
   return(graph.2.filt)
 }
 
+build_dict <- function(dictionary, word_match, word){
+  words.to.keep <- get_words_dict(dictionary = dictionary, word_match = word_match, word = word)
+  
+  words.to.keep <- lapply(words.to.keep, paste, collapse = "")
+  word.to.remove <- paste(word, collapse = "")
+  
+  words.to.remove <- which(!dictionary %in% unlist(words.to.keep))
+  words.to.remove <- c(words.to.remove, which(dictionary == word.to.remove ))
+  dictionary.2 <- dictionary[-words.to.remove]
+  
+  return(dictionary.2)
+}
+
 get_next_net <- function(graph_object, word_match, word, i){
   word <- strsplit(x = word, split = "")[[1]]
   if(length(word_match$match) == 0 & length(word_match$present) == 0){
@@ -135,5 +175,17 @@ get_next_net <- function(graph_object, word_match, word, i){
   }
   
   out <- list("network" = new_net, "centrality" = new_cent, "degree" = new_deg)
+  return(out)
+}
+
+get_next_dict <- function(dictionary, word_match, word, i){
+  word <- strsplit(x = word, split = "")[[1]]
+  if(length(word_match$match) == 0 & length(word_match$present) == 0){
+    new_dict <- dictionary
+  }else{
+    new_dict <- build_dict(dictionary = dictionary, word_match = word_match, word = word)
+  }
+  
+  out <- list("dictionary" = new_dict)
   return(out)
 }
