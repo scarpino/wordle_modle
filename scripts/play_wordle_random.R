@@ -9,14 +9,17 @@ library(rvest)
 library(stringdist)
 library(igraph)
 library(dplyr)
+library(ggplot2)
+library(wesanderson)
 
 #########
 #Globals#
 #########
 run_all <- FALSE #run all words set to TRUE
-run_word <- 210 #run a specific word (need run_all == FALSE)
+run_word <- 206:212 #run a specific word (need run_all == FALSE)
 max_tries <- 15 #max number of tries to make sure the while loop doesn't go forever
 N <- 1000 #number of starts
+start_date <- strptime("2021-06-19", format = "%Y-%m-%d")
 
 ######
 #Data#
@@ -36,23 +39,25 @@ source("acc_funcs.R")
 ######
 #Play#
 ######
-goal_cent <- rep(NA, length(goal_words))
-success_number <- rep(NA, length(goal_words))
-
 if(run_all == TRUE){
   loop_var <- 1:length(goal_words)
 }else{
   loop_var <- run_word
 }
 
-pb <- txtProgressBar(1, N, style=3)
+pb <- txtProgressBar(1, length(loop_var), style=3)
+counter <- 1
 tries <- c()
-for(rambo in 1:N){
-  dictionary <- all_words
-  for(w in loop_var){
-    goal <- goal_words[w]
+dates <- c()
+for(w in loop_var){
+  goal <- goal_words[w]
+  date_w <- start_date + w * 60*60*24
+  date_w <- as.character(date_w)
+  date_w <- substr(date_w, 1, 10)
+  
+  for(rambo in 1:N){
+    dictionary <- all_words
     status <- "sad"
-    
     i <- 1
     words_tried <- c()
     
@@ -76,10 +81,18 @@ for(rambo in 1:N){
         i <- i + 1
       }
     }
-    success_number[w] <- i
-
+    tries <- c(tries, i)
+    dates <- c(dates, date_w)
   }
-  
-  tries <- c(tries, i)
-  setTxtProgressBar(pb, rambo)
+  counter <- counter + 1
+  setTxtProgressBar(pb, counter)
 }
+
+plot.dat <- data.frame(dates, tries)
+plot.dat$dates <- as.Date(plot.dat$dates, format = "%Y-%m-%d")
+plot.dat$dates <- format(plot.dat$dates, format = "%b-%d")
+by_med <- by(data = plot.dat$tries, INDICES = plot.dat$dates, FUN = median, na.rm = TRUE)
+plot.dat$Median <- rep(as.numeric(by_med), each = N)
+cols <- wes_palette(name = "Royal1", n = 6, type = "continuous")
+
+ggplot(plot.dat, aes(x = as.factor(dates), y = tries, fill = as.factor(Median))) + geom_boxplot() + scale_fill_manual(values =  cols, guide_legend(title = "Median guesses")) + xlab("2021") + ylab("Number of words needed to win") + theme(legend.position = c(0.15,0.1), legend.key = element_rect(fill = "#f0f0f0"), legend.background = element_rect(fill = "#ffffffaa", colour = "black"), panel.background = element_rect(fill = "white", colour = "black"), axis.text.y = element_text(colour = "black", size = 14), axis.text.x = element_text(colour = "black", size = 10), axis.title = element_text(colour = "black", size = 15), panel.grid.minor = element_line(colour = "#00000050",linetype = 3), panel.grid.major = element_line(colour = "#00000060", linetype = 3)) + scale_y_continuous(expand = c(0.01,0.01), limits = c(0, max(plot.dat$tries))) + geom_hline(yintercept = 6, linetype = "dashed", color = "#4d4d4d", size = 1.1)
