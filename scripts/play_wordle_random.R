@@ -16,10 +16,10 @@ library(wesanderson)
 #Globals#
 #########
 run_all <- FALSE #run all words set to TRUE
-run_word <- 206:212 #run a specific word (need run_all == FALSE)
+run_word <- 207:213 #run a specific word or set of words (need run_all == FALSE)
 max_tries <- 15 #max number of tries to make sure the while loop doesn't go forever
 N <- 1000 #number of starts
-start_date <- strptime("2021-06-19", format = "%Y-%m-%d")
+start_date <- strptime(Sys.time(), format = "%Y-%m-%d")
 
 ######
 #Data#
@@ -49,6 +49,9 @@ pb <- txtProgressBar(1, length(loop_var), style=3)
 counter <- 1
 tries <- c()
 dates <- c()
+big_words_remaining <- c()
+big_tries <- c()
+big_dates <- c()
 for(w in loop_var){
   goal <- goal_words[w]
   date_w <- start_date + w * 60*60*24
@@ -60,7 +63,7 @@ for(w in loop_var){
     status <- "sad"
     i <- 1
     words_tried <- c()
-    
+    words_remaining <- length(dictionary)
     while(status != "victory" & i < max_tries){
       test_word <- sample(x = dictionary, size = 1)
       
@@ -77,10 +80,13 @@ for(w in loop_var){
         if(length(which(dictionary == goal)) != 1){
           stop("goal word removed from network")
         }
-        
+        words_remaining <- c(words_remaining, length(dictionary))
         i <- i + 1
       }
     }
+    big_words_remaining <- c(big_words_remaining, words_remaining)
+    big_tries <- c(big_tries, 1:length(words_remaining))
+    big_dates <- c(big_dates, rep(dates, length(words_remaining)))
     tries <- c(tries, i)
     dates <- c(dates, date_w)
   }
@@ -90,9 +96,9 @@ for(w in loop_var){
 
 plot.dat <- data.frame(dates, tries)
 plot.dat$dates <- as.Date(plot.dat$dates, format = "%Y-%m-%d")
-plot.dat$dates <- format(plot.dat$dates, format = "%b-%d")
-by_med <- by(data = plot.dat$tries, INDICES = plot.dat$dates, FUN = median, na.rm = TRUE)
-plot.dat$Median <- rep(as.numeric(by_med), each = N)
+plot.dat$dates_plot <- format(plot.dat$dates, format = "%b-%d")
+by_mu <- by(data = plot.dat$tries, INDICES = plot.dat$dates, FUN = mean, na.rm = TRUE)
+plot.dat$Mean <- rep(as.numeric(by_mu), each = N)
 cols <- wes_palette(name = "Royal1", n = 6, type = "continuous")
 
-ggplot(plot.dat, aes(x = as.factor(dates), y = tries, fill = as.factor(Median))) + geom_boxplot() + scale_fill_manual(values =  cols, guide_legend(title = "Median guesses")) + xlab("2021") + ylab("Number of words needed to win") + theme(legend.position = c(0.15,0.1), legend.key = element_rect(fill = "#f0f0f0"), legend.background = element_rect(fill = "#ffffffaa", colour = "black"), panel.background = element_rect(fill = "white", colour = "black"), axis.text.y = element_text(colour = "black", size = 14), axis.text.x = element_text(colour = "black", size = 10), axis.title = element_text(colour = "black", size = 15), panel.grid.minor = element_line(colour = "#00000050",linetype = 3), panel.grid.major = element_line(colour = "#00000060", linetype = 3)) + scale_y_continuous(expand = c(0.01,0.01), limits = c(0, max(plot.dat$tries))) + geom_hline(yintercept = 6, linetype = "dashed", color = "#4d4d4d", size = 1.1)
+ggplot(plot.dat, aes(x = as.factor(dates_plot), y = tries, fill = Mean)) + geom_boxplot(outlier.shape = NA) + geom_jitter(color=cols[1], size=0.4, alpha=0.2) + scale_fill_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 5, guide_legend(title = "Mean guesses")) + xlab("2022") + ylab("Number of guesses needed to win") + theme(legend.position = "none", legend.key = element_rect(fill = "#f0f0f0"), legend.background = element_rect(fill = "#ffffffaa", colour = "black"), panel.background = element_rect(fill = "white", colour = "black"), axis.text.y = element_text(colour = "black", size = 14), axis.text.x = element_text(colour = "black", size = 10), axis.title = element_text(colour = "black", size = 15), panel.grid.minor = element_line(colour = "#00000050",linetype = 3), panel.grid.major = element_line(colour = "#00000060", linetype = 3)) + scale_y_continuous(expand = c(0.01,0.01), limits = c(0, max(plot.dat$tries))) + geom_hline(yintercept = 6, linetype = "dashed", color = cols[4], size = 1) + ggtitle(label = paste0("Wordle difficulty: week of ", format(min(plot.dat$dates), "%b %d, %Y")))

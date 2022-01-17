@@ -30,8 +30,7 @@ match_words <- function(word1, word2){
   }else{
     in_word_filt <- in_word
   }
-  
-  
+
   out <- list("match" = exact_match, "present" = in_word_filt)
   
   return(out)
@@ -63,17 +62,25 @@ find_words_with_wrong_letters <- function(sep_word, word_match, letters){
   return(keep)
 }
 
-find_present_letters <- function(sep_word, positions, letters){
+find_present_letters <- function(sep_word, present, exact, letters){
   if(length(sep_word) != length(letters)){
     stop("word is not properly separated into letters")
   }
   keep <- 1
-  i <- 1
-  while(keep == 1 & i <= length(positions)){
-    if(length(which(sep_word[-positions[i]] %in% letters[positions[i]]))==0){
-      keep <- 0
+  while(keep == 1 & i < length(letters)){
+    if(i %in% present | i%in% exact){
+      if(length(which(sep_word %in% letters[i]))==0){
+        keep <- 0
+      }else{
+        i <- i + 1
+      }
     }else{
-      i <- i + 1
+      test_pres <- which(sep_word %in% letters[i])
+      if(length(test_pres)!=0 & length(which(test_pres %in% exact)) != length(test_pres)){
+        keep <- 0
+      }else{
+        i <- i + 1
+      }
     }
   }
   return(keep)
@@ -91,7 +98,7 @@ get_words <- function(graph_object, word_match, word){
   }
   
   if(length(word_match$present) > 0){
-    keep_words_present <- lapply(X = words.in, FUN = find_present_letters, positions = word_match$present, letters = word)
+    keep_words_present <- lapply(X = words.in, FUN = find_present_letters, positions = c(word_match$present,word_match$match), letters = word)
     words.in <- words.in[which(keep_words_present == 1)]
   }
   
@@ -109,6 +116,9 @@ get_words <- function(graph_object, word_match, word){
 get_words_dict <- function(dictionary, word_match, word){
   words.in <- strsplit(x = dictionary, split = "")
   
+  keep_words_present <- lapply(X = words.in, FUN = find_present_letters, present = word_match$present, exact = word_match$match, letters = word)
+  words.in <- words.in[which(keep_words_present == 1)]
+  
   if(length(word_match$match) > 0){
     keep_words_exact <- lapply(X = words.in, FUN = find_exact_letters, positions = word_match$match, letters = word)
     if(sum(unlist(keep_words_exact)) == 0){
@@ -117,18 +127,10 @@ get_words_dict <- function(dictionary, word_match, word){
     words.in <- words.in[which(keep_words_exact == 1)]
   }
   
-  if(length(word_match$present) > 0){
-    keep_words_present <- lapply(X = words.in, FUN = find_present_letters, positions = word_match$present, letters = word)
-    words.in <- words.in[which(keep_words_present == 1)]
-  }
-  
   if(length(word_match$present) > 0 | length(word_match$match) > 0){
     keep_words_correct_letters <- lapply(X = words.in, FUN = find_words_with_wrong_letters, word_match = word_match, letters = word)
-  }else{
-    stop("all words removed")
+    words.in <- words.in[which(keep_words_correct_letters == 1)]
   }
-  
-  words.in <- words.in[which(keep_words_correct_letters == 1)]
   
   return(words.in)
 }
@@ -180,12 +182,8 @@ get_next_net <- function(graph_object, word_match, word, i){
 
 get_next_dict <- function(dictionary, word_match, word, i){
   word <- strsplit(x = word, split = "")[[1]]
-  if(length(word_match$match) == 0 & length(word_match$present) == 0){
-    new_dict <- dictionary
-  }else{
-    new_dict <- build_dict(dictionary = dictionary, word_match = word_match, word = word)
-  }
-  
+  new_dict <- build_dict(dictionary = dictionary, word_match = word_match, word = word)
+
   out <- list("dictionary" = new_dict)
   return(out)
 }
