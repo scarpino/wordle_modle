@@ -30,8 +30,19 @@ match_words <- function(word1, word2){
   }else{
     in_word_filt <- in_word
   }
-
-  out <- list("match" = exact_match, "present" = in_word_filt)
+  
+  if(length(exact_match) > 0 & length(in_word_filt) > 0){
+    filter_exact_not_present <- which(!split2[in_word_filt] %in% split1[-exact_match])
+    if(length(filter_exact_not_present) > 0){
+      in_word_filt_final <- in_word_filt[-filter_exact_not_present]
+    }else{
+      in_word_filt_final <- in_word_filt
+    }
+  }else{
+    in_word_filt_final <- in_word_filt
+  }
+  
+  out <- list("match" = exact_match, "present" = in_word_filt_final)
   
   return(out)
 }
@@ -86,34 +97,7 @@ find_present_letters <- function(sep_word, present, exact, letters){
   return(keep)
 }
 
-get_words <- function(graph_object, word_match, word){
-  words.in <- strsplit(x = get.vertex.attribute(graph_object$network, "name"), split = "")
-  
-  if(length(word_match$match) > 0){
-    keep_words_exact <- lapply(X = words.in, FUN = find_exact_letters, positions = word_match$match, letters = word)
-    if(sum(unlist(keep_words_exact)) == 0){
-      stop("exact match reported, but not found in remaining words")
-    }
-    words.in <- words.in[which(keep_words_exact == 1)]
-  }
-  
-  if(length(word_match$present) > 0){
-    keep_words_present <- lapply(X = words.in, FUN = find_present_letters, positions = c(word_match$present,word_match$match), letters = word)
-    words.in <- words.in[which(keep_words_present == 1)]
-  }
-  
-  if(length(word_match$present) > 0 | length(word_match$match) > 0){
-    keep_words_correct_letters <- lapply(X = words.in, FUN = find_words_with_wrong_letters, word_match = word_match, letters = word)
-  }else{
-    stop("all words removed")
-  }
-  
-  words.in <- words.in[which(keep_words_correct_letters == 1)]
-  
-  return(words.in)
-}
-
-get_words_dict <- function(dictionary, word_match, word){
+get_words <- function(dictionary, word_match, word){
   words.in <- strsplit(x = dictionary, split = "")
   
   keep_words_present <- lapply(X = words.in, FUN = find_present_letters, present = word_match$present, exact = word_match$match, letters = word)
@@ -139,7 +123,7 @@ build_net <- function(graph_object, word_match, word){
   graph.2 <- graph_object$network
   vertex.names <- get.vertex.attribute(graph_object$network, "name")
   
-  words.to.keep <- get_words(graph_object = graph_object, word_match = word_match, word = word)
+  words.to.keep <- get_words(dictionary = vertex.names, word_match = word_match, word = word)
   
   words.to.keep <- lapply(words.to.keep, paste, collapse = "")
   word.to.remove <- paste(word, collapse = "")
@@ -152,7 +136,7 @@ build_net <- function(graph_object, word_match, word){
 }
 
 build_dict <- function(dictionary, word_match, word){
-  words.to.keep <- get_words_dict(dictionary = dictionary, word_match = word_match, word = word)
+  words.to.keep <- get_words(dictionary = dictionary, word_match = word_match, word = word)
   
   words.to.keep <- lapply(words.to.keep, paste, collapse = "")
   word.to.remove <- paste(word, collapse = "")
@@ -166,16 +150,9 @@ build_dict <- function(dictionary, word_match, word){
 
 get_next_net <- function(graph_object, word_match, word, i){
   word <- strsplit(x = word, split = "")[[1]]
-  if(length(word_match$match) == 0 & length(word_match$present) == 0){
-    new_net <- graph_object$network
-    new_cent <- graph_object$centrality
-    new_deg <- graph_object$degree
-  }else{
-    new_net <- build_net(graph_object = graph_object, word_match = word_match, word = word)
-    new_cent <- eigen_centrality(new_net)
-    new_deg <- degree(new_net)
-  }
-  
+  new_net <- build_net(graph_object = graph_object, word_match = word_match, word = word)
+  new_cent <- eigen_centrality(new_net)
+  new_deg <- degree(new_net)
   out <- list("network" = new_net, "centrality" = new_cent, "degree" = new_deg)
   return(out)
 }

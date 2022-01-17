@@ -14,7 +14,7 @@ library(dplyr)
 #Globals#
 #########
 run_all <- FALSE #run all words set to TRUE
-run_word <- 210 #run a specific word (need run_all == FALSE)
+run_word <- as.numeric(round(Sys.time() - strptime("2021-06-19", format = "%Y-%m-%d")), unit = "days") #run a specific word (need run_all == FALSE), set as is will run today's word
 max_tries <- 15 #max number of tries to make sure the while loop doesn't go forever
 
 ######
@@ -68,7 +68,7 @@ for(w in loop_var){
   
   status <- "sad"
   
-  i <- 1
+  i <- 0
   words_tried <- c()
   
   while(status != "victory" & i < max_tries){

@@ -16,10 +16,11 @@ library(wesanderson)
 #Globals#
 #########
 run_all <- FALSE #run all words set to TRUE
-run_word <- 207:213 #run a specific word or set of words (need run_all == FALSE)
+run_word <- ((as.numeric(round(Sys.time() - strptime("2021-06-19", format = "%Y-%m-%d")), unit = "days"))-6):as.numeric(round(Sys.time() - strptime("2021-06-19", format = "%Y-%m-%d")), unit = "days")  #run a specific word (need run_all == FALSE), set as is will run today's word.
 max_tries <- 15 #max number of tries to make sure the while loop doesn't go forever
 N <- 1000 #number of starts
-start_date <- strptime(Sys.time(), format = "%Y-%m-%d")
+store_dictionary_length <- TRUE #set TRUE to store the length of each dictionary everytime a word is played, this slows things down a bit.
+start_date <- strptime("2021-06-19", format = "%Y-%m-%d")
 
 ######
 #Data#
@@ -61,7 +62,7 @@ for(w in loop_var){
   for(rambo in 1:N){
     dictionary <- all_words
     status <- "sad"
-    i <- 1
+    i <- 0
     words_tried <- c()
     words_remaining <- length(dictionary)
     while(status != "victory" & i < max_tries){
@@ -84,14 +85,16 @@ for(w in loop_var){
         i <- i + 1
       }
     }
-    big_words_remaining <- c(big_words_remaining, words_remaining)
-    big_tries <- c(big_tries, 1:length(words_remaining))
-    big_dates <- c(big_dates, rep(dates, length(words_remaining)))
+    if(store_dictionary_length == TRUE){
+      big_words_remaining <- c(big_words_remaining, words_remaining)
+      big_tries <- c(big_tries, 1:length(words_remaining))
+      big_dates <- c(big_dates, rep(date_w, length(words_remaining)))
+    }
     tries <- c(tries, i)
     dates <- c(dates, date_w)
   }
-  counter <- counter + 1
   setTxtProgressBar(pb, counter)
+  counter <- counter + 1
 }
 
 plot.dat <- data.frame(dates, tries)
@@ -102,3 +105,9 @@ plot.dat$Mean <- rep(as.numeric(by_mu), each = N)
 cols <- wes_palette(name = "Royal1", n = 6, type = "continuous")
 
 ggplot(plot.dat, aes(x = as.factor(dates_plot), y = tries, fill = Mean)) + geom_boxplot(outlier.shape = NA) + geom_jitter(color=cols[1], size=0.4, alpha=0.2) + scale_fill_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 5, guide_legend(title = "Mean guesses")) + xlab("2022") + ylab("Number of guesses needed to win") + theme(legend.position = "none", legend.key = element_rect(fill = "#f0f0f0"), legend.background = element_rect(fill = "#ffffffaa", colour = "black"), panel.background = element_rect(fill = "white", colour = "black"), axis.text.y = element_text(colour = "black", size = 14), axis.text.x = element_text(colour = "black", size = 10), axis.title = element_text(colour = "black", size = 15), panel.grid.minor = element_line(colour = "#00000050",linetype = 3), panel.grid.major = element_line(colour = "#00000060", linetype = 3)) + scale_y_continuous(expand = c(0.01,0.01), limits = c(0, max(plot.dat$tries))) + geom_hline(yintercept = 6, linetype = "dashed", color = cols[4], size = 1) + ggtitle(label = paste0("Wordle difficulty: week of ", format(min(plot.dat$dates), "%b %d, %Y")))
+
+if(store_dictionary_length == TRUE){
+  plot.dat.2 <- data.frame(big_dates, big_tries, big_words_remaining)
+  
+  ggplot(plot.dat.2, aes(x = as.factor(big_tries), y = big_words_remaining))  + geom_jitter(color=cols[1], size=0.4, alpha=0.2) + geom_boxplot(outlier.shape = NA, fill = cols[2], alpha = 0.6) + xlab("Number of guesses") + ylab("Number of remaining words (log 10 scale)") + theme(legend.position = "none", legend.key = element_rect(fill = "#f0f0f0"), legend.background = element_rect(fill = "#ffffffaa", colour = "black"), panel.background = element_rect(fill = "white", colour = "black"), axis.text.y = element_text(colour = "black", size = 14), axis.text.x = element_text(colour = "black", size = 10), axis.title = element_text(colour = "black", size = 15), panel.grid.minor = element_line(colour = "#00000050",linetype = 3), panel.grid.major = element_line(colour = "#00000060", linetype = 3)) + scale_y_log10(expand = c(0.01,0.01)) + ggtitle("Wordle: Rapid decrease in dictionary size with random guesses")
+}
