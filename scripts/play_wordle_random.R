@@ -16,10 +16,10 @@ library(wesanderson)
 #Globals#
 #########
 run_all <- FALSE #run all words set to TRUE
-run_word <- ((as.numeric(round(Sys.time() - strptime("2021-06-19", format = "%Y-%m-%d")), unit = "days"))-6):as.numeric(round(Sys.time() - strptime("2021-06-19", format = "%Y-%m-%d")), unit = "days")  #run a specific word (need run_all == FALSE), set as is will run today's word.
+run_word <- ((as.numeric(ceiling(Sys.time() - strptime("2021-06-19", format = "%Y-%m-%d")), unit = "days"))-6):as.numeric(ceiling(Sys.time() - strptime("2021-06-19", format = "%Y-%m-%d")), unit = "days")  #run a specific word (need run_all == FALSE), set as is will run today's word.
 max_tries <- 15 #max number of tries to make sure the while loop doesn't go forever
 N <- 1000 #number of starts
-store_dictionary_length <- TRUE #set TRUE to store the length of each dictionary everytime a word is played, this slows things down a bit.
+store_dictionary_length <- FALSE #set TRUE to store the length of each dictionary everytime a word is played, this slows things down a bit.
 start_date <- strptime("2021-06-19", format = "%Y-%m-%d")
 
 ######
@@ -111,3 +111,5 @@ if(store_dictionary_length == TRUE){
   
   ggplot(plot.dat.2, aes(x = as.factor(big_tries-1), y = big_words_remaining))  + geom_jitter(color=cols[1], size=0.4, alpha=0.2) + geom_boxplot(outlier.shape = NA, fill = cols[2], alpha = 0.6) + xlab("Number of guesses") + ylab("Number of remaining words (log 10 scale)") + theme(legend.position = "none", legend.key = element_rect(fill = "#f0f0f0"), legend.background = element_rect(fill = "#ffffffaa", colour = "black"), panel.background = element_rect(fill = "white", colour = "black"), axis.text.y = element_text(colour = "black", size = 14), axis.text.x = element_text(colour = "black", size = 10), axis.title = element_text(colour = "black", size = 15), panel.grid.minor = element_line(colour = "#00000050",linetype = 3), panel.grid.major = element_line(colour = "#00000060", linetype = 3)) + scale_y_log10(expand = c(0.01,0.01)) + ggtitle("Wordle: Rapid decrease in dictionary size with random guesses")
 }
+
+#write.csv(plot.dat, file = "wordle_power_ranking_data.csv", row.names = FALSE)
