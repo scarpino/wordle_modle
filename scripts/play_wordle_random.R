@@ -17,7 +17,7 @@ library(wesanderson)
 #########
 run_all <- FALSE #run all words set to TRUE
 run_word <- ((as.numeric(ceiling(Sys.time() - strptime("2021-06-19", format = "%Y-%m-%d")), unit = "days"))-6):as.numeric(ceiling(Sys.time() - strptime("2021-06-19", format = "%Y-%m-%d")), unit = "days")  #run a specific word (need run_all == FALSE), set as is will run today's word.
-max_tries <- 15 #max number of tries to make sure the while loop doesn't go forever
+max_tries <- 20 #max number of tries to make sure the while loop doesn't go forever
 N <- 1000 #number of starts
 store_dictionary_length <- FALSE #set TRUE to store the length of each dictionary everytime a word is played, this slows things down a bit.
 start_date <- strptime("2021-06-19", format = "%Y-%m-%d")
